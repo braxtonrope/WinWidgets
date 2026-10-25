@@ -1,107 +1,44 @@
-import sys
+import sys, os
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QGuiApplication
 
 from widgets.time_widget import TimeWidget
 
-# class DesktopWidget(QWidget):
-#     def __init__(self):
-#         super().__init__()
 
-#         # Configure the window
-#         self.setWindowTitle("Desktop Widget")
-
-#         self.setWindowFlags(
-#             Qt.Tool | Qt.FramelessWindowHint
-#         )
-
-#         # Allow Transparency
-#         self.setAttribute(
-#             Qt.WA_TranslucentBackground
-#         )
-
-#         # Size the window
-#         self.resize(300,100)
-                
-#         # Put the widget somewhere on the screen
-#         self.move(100,100)
-
-#         # # Create the Text
-#         # label = QLabel("Hello From My Desktop Widget!", self)
-
-
-#         # # Puts the label in the widget
-#         # label.setGeometry(0, 0, 300, 1000)
-
-#         # label.setAlignment(Qt.AlignCenter)
-
-#         # Main card
-#         card = QFrame()
-
-#         # CSS for the label (Convert to liquid glass later on)
-#         card.setStyleSheet("""
-#             QFrame {
-#                 background-color: rgba(25,25,30,230);
-#                 border-radius: 20px;
-#             }
-#         """)
-
-#         title = QLabel("My Desktop")
-
-#         title.setStyleSheet("""
-#             QLabel {
-#                 color: white;
-#                 font-size: 22px;
-#                 font-weight: bold;
-#             }
-#         """)
-
-#         # Widget Information
-#         info = QLabel("Hello From Your Desktop!")
-
-#         info.setStyleSheet("""
-#             QLabel {
-#                 color: #bbbbbb;
-#                 font-size: 16px;
-#             }
-#         """)
-
-#         # Layout inside card
-#         layout = QVBoxLayout(card)
-
-#         layout.addWidget(title)
-#         layout.addWidget(info)
-
-#         layout.setContentsMargins(20,20,20,20)
-
-#         window_layout = QVBoxLayout(self)
-
-#         window_layout.addWidget(card)
-
-#         window_layout.setContentsMargins(0,0,0,0)
 
 def main():
-    app = QApplication(sys.argv)
 
+    app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 
-    time_widget = TimeWidget()
+    app.widgets = []
 
-    # Get Primary Monitor's available geometry
-    screen = QGuiApplication.primaryScreen()
-    screen_geometry = screen.availableGeometry()
+    screens = QGuiApplication.screens()
 
-    x = screen_geometry.center().x() - time_widget.width() // 2
-    y = 50
+    for i in range(len(screens)):
+        time_widget = TimeWidget()
+        screen = screens[i]
+        screen_geometry = screen.availableGeometry()
 
-    time_widget.move(x, y)
+        # Force calculation of true widget size
+        time_widget.show()
+        time_widget.adjustSize()
 
-    time_widget.show()
+        # Bind this window handle to the target screen
+        if time_widget.windowHandle():
+            time_widget.windowHandle().setScreen(screen)
 
-    app.time_widget = time_widget
+        # Centers x by width of Screen
+        x = screen_geometry.center().x() - time_widget.width() // 2
+        y = screen_geometry.y() + 50 # Handle vertical monitor arangement
+
+        time_widget.move(x,y)
+
+        app.widgets.append(time_widget)
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

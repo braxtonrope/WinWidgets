@@ -1,6 +1,8 @@
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QGraphicsDropShadowEffect
+
+import styles.presets
 
 
 class BaseWidget(QWidget):
@@ -25,12 +27,22 @@ class BaseWidget(QWidget):
         self.card = QFrame()
         self.card.setObjectName("card")
 
+        # Apply liquid glass preset
         self.card.setStyleSheet("""
             QFrame#card {
-                background-color: rgba(30, 30, 40, 230);
-                border-radius: 16px;
-            }
+                    background-color: rgba(255, 255, 255, 35);
+                    border: 1px solid rgba(255, 255, 255, 80);
+                    border-radius: 28px;
+                }
         """)
+
+        # Add a subtle shadow
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(30)
+        shadow.setOffset(0, 8)
+        shadow.setColor(Qt.GlobalColor.black)
+
+        self.card.setGraphicsEffect(shadow)
 
         # Layout inside the card
         self.content_layout = QVBoxLayout(self.card)
