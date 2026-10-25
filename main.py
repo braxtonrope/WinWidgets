@@ -1,96 +1,105 @@
 import sys
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QApplication,
-    QLabel,
-    QWidget,
-    QVBoxLayout,
-    QFrame
-    )
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QGuiApplication
 
-class DesktopWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+from widgets.time_widget import TimeWidget
 
-        # Configure the window
-        self.setWindowTitle("Desktop Widget")
+# class DesktopWidget(QWidget):
+#     def __init__(self):
+#         super().__init__()
 
-        self.setWindowFlags(
-            Qt.Tool | Qt.FramelessWindowHint
-        )
+#         # Configure the window
+#         self.setWindowTitle("Desktop Widget")
 
-        # Allow Transparency
-        self.setAttribute(
-            Qt.WA_TranslucentBackground
-        )
+#         self.setWindowFlags(
+#             Qt.Tool | Qt.FramelessWindowHint
+#         )
 
-        # Size the window
-        self.resize(300,100)
+#         # Allow Transparency
+#         self.setAttribute(
+#             Qt.WA_TranslucentBackground
+#         )
+
+#         # Size the window
+#         self.resize(300,100)
                 
-        # Put the widget somewhere on the screen
-        self.move(100,100)
+#         # Put the widget somewhere on the screen
+#         self.move(100,100)
 
-        # # Create the Text
-        # label = QLabel("Hello From My Desktop Widget!", self)
+#         # # Create the Text
+#         # label = QLabel("Hello From My Desktop Widget!", self)
 
 
-        # # Puts the label in the widget
-        # label.setGeometry(0, 0, 300, 1000)
+#         # # Puts the label in the widget
+#         # label.setGeometry(0, 0, 300, 1000)
 
-        # label.setAlignment(Qt.AlignCenter)
+#         # label.setAlignment(Qt.AlignCenter)
 
-        # Main card
-        card = QFrame()
+#         # Main card
+#         card = QFrame()
 
-        # CSS for the label (Convert to liquid glass later on)
-        card.setStyleSheet("""
-            QFrame {
-                background-color: rgba(25,25,30,230);
-                border-radius: 20px;
-            }
-        """)
+#         # CSS for the label (Convert to liquid glass later on)
+#         card.setStyleSheet("""
+#             QFrame {
+#                 background-color: rgba(25,25,30,230);
+#                 border-radius: 20px;
+#             }
+#         """)
 
-        title = QLabel("My Desktop")
+#         title = QLabel("My Desktop")
 
-        title.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 22px;
-                font-weight: bold;
-            }
-        """)
+#         title.setStyleSheet("""
+#             QLabel {
+#                 color: white;
+#                 font-size: 22px;
+#                 font-weight: bold;
+#             }
+#         """)
 
-        # Widget Information
-        info = QLabel("Hello From Your Desktop!")
+#         # Widget Information
+#         info = QLabel("Hello From Your Desktop!")
 
-        info.setStyleSheet("""
-            QLabel {
-                color: #bbbbbb;
-                font-size: 16px;
-            }
-        """)
+#         info.setStyleSheet("""
+#             QLabel {
+#                 color: #bbbbbb;
+#                 font-size: 16px;
+#             }
+#         """)
 
-        # Layout inside card
-        layout = QVBoxLayout(card)
+#         # Layout inside card
+#         layout = QVBoxLayout(card)
 
-        layout.addWidget(title)
-        layout.addWidget(info)
+#         layout.addWidget(title)
+#         layout.addWidget(info)
 
-        layout.setContentsMargins(20,20,20,20)
+#         layout.setContentsMargins(20,20,20,20)
 
-        window_layout = QVBoxLayout(self)
+#         window_layout = QVBoxLayout(self)
 
-        window_layout.addWidget(card)
+#         window_layout.addWidget(card)
 
-        window_layout.setContentsMargins(0,0,0,0)
+#         window_layout.setContentsMargins(0,0,0,0)
 
 def main():
     app = QApplication(sys.argv)
 
-    widget = DesktopWidget()
+    app.setQuitOnLastWindowClosed(False)
 
-    widget.show()
+    time_widget = TimeWidget()
+
+    # Get Primary Monitor's available geometry
+    screen = QGuiApplication.primaryScreen()
+    screen_geometry = screen.availableGeometry()
+
+    x = screen_geometry.center().x() - time_widget.width() // 2
+    y = 50
+
+    time_widget.move(x, y)
+
+    time_widget.show()
+
+    app.time_widget = time_widget
 
     sys.exit(app.exec())
 
