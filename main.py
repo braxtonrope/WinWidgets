@@ -6,6 +6,7 @@ from PySide6.QtGui import QGuiApplication
 from widgets.time_widget import TimeWidget
 from widgets.running_game_servers_widget import RunningGameServersWidget
 from services.amp_data_manager import AMPDataManager
+from services.node_data_manager import NodeDataManager
 
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
@@ -18,7 +19,7 @@ screens = QGuiApplication.screens()
 amp_manager = AMPDataManager()
 
 def main():
-
+    node_manager = NodeDataManager()
     add_running_game_servers_widgets()
     add_time_and_date_widgets()
 

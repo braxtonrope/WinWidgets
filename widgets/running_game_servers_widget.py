@@ -1,4 +1,4 @@
-from PySide6.QtCore import QTimer, QDateTime, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout
 
 from widgets.base_widget import BaseWidget
