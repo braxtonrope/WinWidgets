@@ -3,34 +3,64 @@ from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout
 
 from widgets.base_widget import BaseWidget
 
-# Web scrapping for AMP game Servers
-from playwright.sync_api import sync_playwright
-from dotenv import load_dotenv, dotenv_values, find_dotenv
-import os
-
-# Find the env file
-load_dotenv(find_dotenv())
-
-# Local hosted AMP Server IP
-AMP_SERVER = os.getenv("AMP_SERVER")
-
 WIDTH = 300
 HEIGHT_PER_SERVER = 100
 
 class RunningGameServersWidget(BaseWidget):    
 
-    def __init__(self):
-        super().__init__("Game Servers")
+    def __init__(self, scale, amp_manager):
+        super().__init__("Game Servers", scale)
+        self.scale = scale
 
-        self.server_data = self.get_running_game_servers_information()
-        num_servers = len(self.server_data)
+        self.amp_manager = amp_manager
 
-        height = HEIGHT_PER_SERVER * num_servers
-
+        # Get current data
+        server_data = amp_manager.get_data()
+       
         self.server_labels = []
 
-        for server in self.server_data:
+        # Listen for updates from the manager
+        self.amp_manager.data_updated.connect(self.refresh_server_data)
 
+        # Check if data already exists
+        server_data = self.amp_manager.get_data()
+        if server_data:
+            self.create_server_widgets(server_data)
+
+        self.style_widget()
+        height = HEIGHT_PER_SERVER * len(server_data)
+        self.resize(int(WIDTH * self.scale), int(max(height, HEIGHT_PER_SERVER) * self.scale))
+
+        
+
+
+    def refresh_server_data(self, updated_data):
+
+        # If there are no widgets yet, create them all
+        if not self.server_labels:
+            self.create_server_widgets(updated_data)
+            self.update_widget_size()
+            return
+
+        # Update existing widgets
+        for i, server in enumerate(updated_data):
+
+            if i >= len(self.server_labels):
+                print("Missing widget for:", server["name"])
+                continue
+
+            labels = self.server_labels[i]
+
+            labels["name"].setText(server["name"])
+            labels["cpu"].setText(f"CPU: {server['cpu_usage']}")
+            labels["ram"].setText(f"RAM: {server['ram_usage']}")
+            labels["players"].setText(
+                f"Players: {server['player_count']}"
+            )
+
+
+    def create_server_widgets(self, server_data):
+        for server in server_data:
             # Vertical layout for each server
             server_layout = QVBoxLayout()
             server_layout.setSpacing(5)
@@ -55,9 +85,9 @@ class RunningGameServersWidget(BaseWidget):
             server_ram = QLabel(f"RAM: {server['ram_usage']}")
             server_players = QLabel(f"Players: {server['player_count']}")
 
-            server_cpu.setFixedWidth(75)
-            server_ram.setFixedWidth(125)
-            server_players.setFixedWidth(100)
+            server_cpu.setFixedWidth(int(75*self.scale))
+            server_ram.setFixedWidth(int(125*self.scale))
+            server_players.setFixedWidth(int(100*self.scale))
 
             for label in (server_cpu, server_ram, server_players):
                 label.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -82,67 +112,17 @@ class RunningGameServersWidget(BaseWidget):
             # Add this server's complete layout to the widget
             self.content_layout.addLayout(server_layout)
 
-        self.style_widget()
-        self.resize(WIDTH, max(height, HEIGHT_PER_SERVER))
 
-        # Update data every 30 seconds
-        self.refresh_timer = QTimer(self)
-        self.refresh_timer.timeout.connect(self.refresh_server_data)
-        self.refresh_timer.start(30_000)
+    def update_widget_size(self):
 
-    def refresh_server_data(self):
-        updated_data = self.get_running_game_servers_information()
+        server_count = len(self.server_labels)
 
-        for i, server in enumerate(updated_data):
-            if i >= len(self.server_labels):
-                break
+        height = HEIGHT_PER_SERVER * server_count
 
-            labels = self.server_labels[i]
-
-            labels["name"].setText(server["name"])
-            labels["cpu"].setText(f"CPU: {server['cpu_usage']}")
-            labels["ram"].setText(f"RAM: {server['ram_usage']}")
-            labels["players"].setText(f"Players: {server['player_count']}")
-
-
-    def get_running_game_servers_information(self):
-        self.server_data = []
-        with sync_playwright() as playwright:
-            browser = playwright.firefox.launch(headless = True)
-            page = browser.new_page()
-            page.goto(AMP_SERVER)
-            page.wait_for_load_state("networkidle")
-
-            # Log in to amp
-            page.locator('input[name="username"]').fill(os.getenv("AMP_USERNAME"))
-            page.locator('input[name="password"]').fill(os.getenv("AMP_PASSWORD"))
-            page.locator("#loginButton").click()
-
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(3000) # Makes sure the page is loaded before getting data
-
-            # Find the needed divs
-            running_divs = page.locator(".statusRunning")
-            friendly_name = running_divs.locator(".ServerEntryTop").locator(".ServerEntryHeader").locator('[data-bind="text: friendlyname"]')
-
-            servers = friendly_name.all_text_contents()
-            servers = servers[:len(servers)//2]
-
-            # Get CPU, MEMORY, and PLAYERS information
-            metrics = running_divs.locator(".ServerEntryInfo").locator(".ServerEntryMetrics").locator(".ServerEntryMetric").locator(".MetricText").locator("h4")
-            metrics_array = metrics.all_text_contents()
-            metrics_array = metrics_array[:len(metrics_array)//2]
-
-            next_index = 0
-            for i in range(len(servers)):
-                single_server_data = {
-                    "name": servers[i],
-                    "cpu_usage": metrics_array[0+next_index],
-                    "ram_usage": metrics_array[1+next_index],
-                    "player_count": metrics_array[2+next_index]
-                }
-                next_index += 3
-                self.server_data.append(single_server_data)
-
-            browser.close()
-            return self.server_data
+        self.resize(
+            int(WIDTH * self.scale),
+            int(
+                max(height, HEIGHT_PER_SERVER)
+                * self.scale
+            )
+        )

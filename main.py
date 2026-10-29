@@ -5,6 +5,7 @@ from PySide6.QtGui import QGuiApplication
 
 from widgets.time_widget import TimeWidget
 from widgets.running_game_servers_widget import RunningGameServersWidget
+from services.amp_data_manager import AMPDataManager
 
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
@@ -12,6 +13,9 @@ app.setQuitOnLastWindowClosed(False)
 app.widgets = []
 
 screens = QGuiApplication.screens()
+
+# ONE shared AMP data manager
+amp_manager = AMPDataManager()
 
 def main():
 
@@ -21,12 +25,13 @@ def main():
     sys.exit(app.exec())
 
 def add_time_and_date_widgets():
-    
 
-    for i in range(len(screens)):
-        time_widget = TimeWidget()
-        screen = screens[i]
+    for screen in screens:
+
+        scale = get_screen_scale(screen)
         screen_geometry = screen.availableGeometry()
+
+        time_widget = TimeWidget(scale)
 
         # Force calculation of true widget size
         time_widget.show()
@@ -45,10 +50,12 @@ def add_time_and_date_widgets():
         app.widgets.append(time_widget)
 
 def add_running_game_servers_widgets():
-    for i in range(len(screens)):
-        running_game_servers_widget = RunningGameServersWidget()
-        screen = screens[i]
+    for screen in screens:
+        
+        scale = get_screen_scale(screen)
         screen_geometry = screen.availableGeometry()
+
+        running_game_servers_widget = RunningGameServersWidget(scale, amp_manager)
 
         running_game_servers_widget.show()
         running_game_servers_widget.adjustSize()
@@ -62,6 +69,18 @@ def add_running_game_servers_widgets():
         running_game_servers_widget.move(x,y)
 
         app.widgets.append(running_game_servers_widget)
+
+
+
+def get_screen_scale(screen):
+    """
+    Returns the scale factor for a screen.
+    96 DPI = 1.0
+    120 DPI = 1.25
+    144 DPI = 1.5
+    """
+    return screen.logicalDotsPerInch() / 96.0
+
 
 
 if __name__ == "__main__":
