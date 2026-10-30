@@ -5,6 +5,7 @@ from PySide6.QtGui import QGuiApplication
 
 from widgets.time_widget import TimeWidget
 from widgets.running_game_servers_widget import RunningGameServersWidget
+from widgets.node_data_widget import NodeDataWidget
 from services.amp_data_manager import AMPDataManager
 from services.node_data_manager import NodeDataManager
 
@@ -17,9 +18,10 @@ screens = QGuiApplication.screens()
 
 # ONE shared AMP data manager
 amp_manager = AMPDataManager()
+node_manager = NodeDataManager()
 
 def main():
-    node_manager = NodeDataManager()
+    add_node_widget()
     add_running_game_servers_widgets()
     add_time_and_date_widgets()
 
@@ -71,6 +73,25 @@ def add_running_game_servers_widgets():
 
         app.widgets.append(running_game_servers_widget)
 
+def add_node_widget():
+    for screen in screens:
+        scale = get_screen_scale(screen)
+        screen_geometry = screen.availableGeometry()
+
+        node_widget = NodeDataWidget(scale, node_manager)
+
+        node_widget.show()
+        node_widget.adjustSize()
+
+        if node_widget.windowHandle():
+            node_widget.windowHandle().setScreen(screen)
+
+        x = screen_geometry.x() + (screen.size().width() - 550)
+        y = screen_geometry.y() + 50
+
+        node_widget.move(x,y)
+
+        app.widgets.append(node_widget)
 
 
 def get_screen_scale(screen):

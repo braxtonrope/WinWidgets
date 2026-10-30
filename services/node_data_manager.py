@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from dotenv import load_dotenv, find_dotenv
 import os
-import subprocess
 import paramiko
 import re
 
@@ -13,14 +12,33 @@ SSH_USERNAME = os.getenv("SSH_USERNAME")
 SUDO_PASSWORD = os.getenv("SUDO_PASSWORD")
 
 class NodeDataManager(QObject):
-    node_data = []
     data_updated = Signal(list)
 
     def __init__(self):
         super().__init__()
-        self.get_all_data()
+
+        self.node_data = []
+        
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.timeout.connect(self.refresh)
+        self.refresh_timer.start(30_000)
+
+        # Get initial data immediately.
+        self.refresh()
+
+
+    def refresh(self):
+        try:
+            self.node_data = self.get_all_data()
+
+            # Notifiy widgets of updated data
+            self.data_updated.emit(self.node_data)
+
+        except Exception as e:
+            print(f"Failed to update Node data: {e}")
 
     def get_all_data(self):
+        node_data = []
         for i in range(1, int (NUM_NODES)+1):
             try:
                 host = os.getenv(f"NODE{i}_IP")
@@ -28,26 +46,19 @@ class NodeDataManager(QObject):
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 client.connect(host, username=SSH_USERNAME, password=SUDO_PASSWORD)
 
-                print("===============================")
-                print(os.getenv(f"NODE{i}_DNS_NAME"))
-
-                
+                node_name = os.getenv(f"NODE{i}_DNS_NAME")
+                node_ip = os.getenv(f"NODE{i}_IP")
                 cpu_temp = self.get_temp(client)
-                print(f"CPU Temp: {cpu_temp}")
-                
                 cpu_usage = self.get_cpu_usage(client)
-                print(f"CPU Usage: {cpu_usage}")
-
                 ram_free = self.get_ram_free(client)
-                print(f"Free Ram: {ram_free}")
-                
                 disk_free = self.get_disk_free(client)
-                print(f"Disk Free: {disk_free}")
-                # data = {"cpu_usage":cpu_usage, "cpu_temp":cpu_temp, "ram_free":ram_free, "storage_free":storage_free}
-                # self.node_data.append(data)
+
+                data = {"node_name": node_name, "node_ip": node_ip, "cpu_usage":cpu_usage, "cpu_temp":cpu_temp, "ram_free":ram_free, "disk_free":disk_free}
+                node_data.append(data)
 
             finally:
                 client.close()
+        return node_data
 
     def get_temp(self, client):
         stdin, stdout, stderr = client.exec_command("sensors")
@@ -98,3 +109,6 @@ class NodeDataManager(QObject):
                         available_space += float(string[:-1])
                 
         return f"{round(available_space)} GB" # Converts to GB
+
+    def get_data(self):
+        return self.node_data
