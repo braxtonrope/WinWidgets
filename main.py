@@ -5,6 +5,8 @@ os.environ["QT_SCALE_FACTOR"] = "1"
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QGuiApplication
 
+from manager.widget_manager import WidgetManager
+
 from widgets.time_widget import TimeWidget
 from widgets.running_game_servers_widget import RunningGameServersWidget
 from widgets.node_data_widget import NodeDataWidget
@@ -25,11 +27,29 @@ amp_manager = AMPDataManager()
 node_manager = NodeDataManager()
 
 def main():
-    add_node_widget()
-    add_running_game_servers_widgets()
-    add_time_and_date_widgets()
+
+    widget_manager = WidgetManager(padding=25, snap_distance=50)
+    widget_manager.register_widget("time", TimeWidget)
+    widget_manager.register_widget("node_data", NodeDataWidget)
+    widget_manager.register_widget("game_servers", RunningGameServersWidget)
+
+    time_widget = widget_manager.add_widget(
+    "time"
+    )
+
+    node_widget = widget_manager.add_widget(
+        "node_data",
+        node_manager
+    )
+
+    server_widget = widget_manager.add_widget(
+        "game_servers",
+        amp_manager
+    )
 
     sys.exit(app.exec())
+
+
 
 def add_time_and_date_widgets():
 
@@ -94,16 +114,6 @@ def add_node_widget():
         node_widget.move(x,y)
 
         app.widgets.append(node_widget)
-
-
-# def get_screen_scale(screen):
-#     """
-#     Returns the scale factor for a screen.
-#     96 DPI = 1.0
-#     120 DPI = 1.25
-#     144 DPI = 1.5
-#     """
-#     return screen.logicalDotsPerInch() / 96.0
 
 
 

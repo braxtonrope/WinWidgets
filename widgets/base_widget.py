@@ -1,9 +1,15 @@
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, QPoint
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QGraphicsDropShadowEffect
 
 
 class BaseWidget(QWidget):
+
+    # Notifiy of changes made to widget
+    drag_started = Signal(object)
+    dragging = Signal(object, object)
+    drag_finished = Signal(object)
+
 
     def __init__(self, title):
         super().__init__()
@@ -20,6 +26,9 @@ class BaseWidget(QWidget):
         self.setAttribute(
             Qt.WidgetAttribute.WA_TranslucentBackground
         )
+
+        self._dragging = False
+        self._drag_offset = QPoint()
 
         # Create the card background
         self.card = QFrame()
@@ -59,3 +68,50 @@ class BaseWidget(QWidget):
 
         self.card.setGraphicsEffect(shadow)
 
+    
+    def mousePressEvent(self, event):
+
+        if event.button() == Qt.MouseButton.LeftButton:
+
+            self._dragging = True
+
+            mouse_position = event.globalPosition().toPoint()
+            widget_position = self.frameGeometry().topLeft()
+
+            self._drag_offset = mouse_position - widget_position
+
+            self.drag_started.emit(self)
+
+            event.accept()
+            return
+
+        super().mousePressEvent(event)
+
+
+    def mouseMoveEvent(self, event):
+
+        if self._dragging:
+
+            mouse_position = event.globalPosition().toPoint()
+            new_position = mouse_position - self._drag_offset
+
+            self.dragging.emit(self, new_position)
+
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
+
+
+    def mouseReleaseEvent(self, event):
+
+        if event.button() == Qt.MouseButton.LeftButton:
+
+            self._dragging = False
+
+            self.drag_finished.emit(self)
+
+            event.accept()
+            return
+
+        super().mouseReleaseEvent(event)

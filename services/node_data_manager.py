@@ -21,7 +21,7 @@ class NodeDataManager(QObject):
         
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.start(30_000)
+        self.refresh_timer.start(5_000)
 
         # Get initial data immediately.
         self.refresh()
