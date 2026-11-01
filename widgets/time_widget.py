@@ -7,9 +7,9 @@ WIDTH = 500
 HEIGHT = 100
 
 class TimeWidget(BaseWidget):
-    def __init__(self, scale):
-        super().__init__("Time And Date", scale)
-        self.scale = scale
+    def __init__(self):
+        super().__init__("Time And Date")
+        
         # Time Display
         self.time_label = QLabel()
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -38,7 +38,7 @@ class TimeWidget(BaseWidget):
 
         self.update_time()
 
-        self.resize(int(WIDTH * self.scale), int(HEIGHT  * self.scale))
+        self.resize(WIDTH, HEIGHT)
 
     def update_time(self):
         now = QDateTime.currentDateTime()

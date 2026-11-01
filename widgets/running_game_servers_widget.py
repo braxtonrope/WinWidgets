@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QGridLayout
 
 from widgets.base_widget import BaseWidget
 
@@ -8,9 +8,8 @@ HEIGHT_PER_SERVER = 100
 
 class RunningGameServersWidget(BaseWidget):    
 
-    def __init__(self, scale, amp_manager):
-        super().__init__("Game Servers", scale)
-        self.scale = scale
+    def __init__(self, amp_manager):
+        super().__init__("Game Servers")
 
         self.amp_manager = amp_manager
 
@@ -28,8 +27,7 @@ class RunningGameServersWidget(BaseWidget):
             self.create_server_widgets(server_data)
 
         self.style_widget()
-        height = HEIGHT_PER_SERVER * len(server_data)
-        self.resize(int(WIDTH * self.scale), int(max(height, HEIGHT_PER_SERVER) * self.scale))
+        self.update_widget_size()
 
         
 
@@ -61,9 +59,9 @@ class RunningGameServersWidget(BaseWidget):
 
     def create_server_widgets(self, server_data):
         for server in server_data:
-            # Vertical layout for each server
-            server_layout = QVBoxLayout()
-            server_layout.setSpacing(5)
+            server_layout = QGridLayout()
+            server_layout.setContentsMargins(10,10,10,10)
+            server_layout.setSpacing(20)
 
             # Server name
             server_name = QLabel(server["name"])
@@ -74,20 +72,12 @@ class RunningGameServersWidget(BaseWidget):
                 font-weight: bold;
             """)
 
-            server_layout.addWidget(server_name)
-
-            # Horizontal layout for CPU, RAM, and players
-            metrics_layout = QHBoxLayout()
-            metrics_layout.setSpacing(10)
+            server_layout.addWidget(server_name, 0, 0)
 
             # Create labels with consistent widths
             server_cpu = QLabel(f"CPU: {server['cpu_usage']}")
             server_ram = QLabel(f"RAM: {server['ram_usage']}")
             server_players = QLabel(f"Players: {server['player_count']}")
-
-            server_cpu.setFixedWidth(int(75*self.scale))
-            server_ram.setFixedWidth(int(125*self.scale))
-            server_players.setFixedWidth(int(100*self.scale))
 
             for label in (server_cpu, server_ram, server_players):
                 label.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -96,9 +86,9 @@ class RunningGameServersWidget(BaseWidget):
                     font-size: 13px;
                 """)
 
-            metrics_layout.addWidget(server_cpu)
-            metrics_layout.addWidget(server_ram)
-            metrics_layout.addWidget(server_players)
+            server_layout.addWidget(server_cpu, 1, 0)
+            server_layout.addWidget(server_ram, 1, 1)
+            server_layout.addWidget(server_players, 1, 2)
 
             self.server_labels.append({
                 "name": server_name,
@@ -106,8 +96,6 @@ class RunningGameServersWidget(BaseWidget):
                 "ram": server_ram,
                 "players": server_players
             })
-
-            server_layout.addLayout(metrics_layout)
 
             # Add this server's complete layout to the widget
             self.content_layout.addLayout(server_layout)
@@ -120,9 +108,8 @@ class RunningGameServersWidget(BaseWidget):
         height = HEIGHT_PER_SERVER * server_count
 
         self.resize(
-            int(WIDTH * self.scale),
+            int(WIDTH),
             int(
                 max(height, HEIGHT_PER_SERVER)
-                * self.scale
             )
         )

@@ -5,11 +5,10 @@ from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QGraphicsDropShadowE
 
 class BaseWidget(QWidget):
 
-    def __init__(self, title, scale):
+    def __init__(self, title):
         super().__init__()
 
         self.setWindowTitle(title)
-        self.scale = scale
 
         # Frameless desktop-style window
         self.setWindowFlags(
@@ -39,7 +38,7 @@ class BaseWidget(QWidget):
         window_layout.addWidget(self.card)
 
         # Default Size
-        self.resize(int(250 * self.scale), int(120  * self.scale))
+        self.resize(250, 120)
     
     # Style the Widget
     def style_widget(self):
