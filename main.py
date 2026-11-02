@@ -28,92 +28,57 @@ node_manager = NodeDataManager()
 
 def main():
 
-    widget_manager = WidgetManager(padding=25, snap_distance=50)
-    widget_manager.register_widget("time", TimeWidget)
-    widget_manager.register_widget("node_data", NodeDataWidget)
-    widget_manager.register_widget("game_servers", RunningGameServersWidget)
-
-    time_widget = widget_manager.add_widget(
-    "time"
+    widget_manager = WidgetManager(
+        padding=25,
+        snap_distance=50
     )
 
-    node_widget = widget_manager.add_widget(
+    # Register widget types
+    widget_manager.register_widget(
+        "time",
+        lambda: TimeWidget()
+    )
+
+    widget_manager.register_widget(
         "node_data",
-        node_manager
+        lambda: NodeDataWidget(node_manager)
     )
 
-    server_widget = widget_manager.add_widget(
+    widget_manager.register_widget(
         "game_servers",
-        amp_manager
+        lambda: RunningGameServersWidget(amp_manager)
     )
+
+    # Load saved layout
+    loaded = widget_manager.load_layout()
+
+    # Create defaults if no saved layout exists
+    if not loaded:
+
+        time_widget = widget_manager.add_widget(
+            "time",
+            save=False
+        )
+
+        node_widget = widget_manager.add_widget(
+            "node_data",
+            save=False
+        )
+
+        server_widget = widget_manager.add_widget(
+            "game_servers",
+            save=False
+        )
+
+        # Set initial positions
+        time_widget.move(50, 50)
+        node_widget.move(50, 200)
+        server_widget.move(400, 50)
+
+        # Save the initial layout
+        widget_manager.save_layout()
 
     sys.exit(app.exec())
-
-
-
-def add_time_and_date_widgets():
-
-    for screen in screens:
-        screen_geometry = screen.availableGeometry()
-
-        time_widget = TimeWidget()
-
-        # Force calculation of true widget size
-        time_widget.show()
-        # time_widget.adjustSize()
-
-        # Bind this window handle to the target screen
-        if time_widget.windowHandle():
-            time_widget.windowHandle().setScreen(screen)
-
-        # Centers x by width of Screen
-        x = screen_geometry.center().x() - time_widget.width() // 2
-        y = screen_geometry.y() + 50 # Handle vertical monitor arangement
-
-        time_widget.move(x,y)
-
-        app.widgets.append(time_widget)
-
-def add_running_game_servers_widgets():
-    for screen in screens:
-        screen_geometry = screen.availableGeometry()
-
-        running_game_servers_widget = RunningGameServersWidget(amp_manager)
-
-        running_game_servers_widget.show()
-        # running_game_servers_widget.adjustSize()
-
-        if running_game_servers_widget.windowHandle():
-            running_game_servers_widget.windowHandle().setScreen(screen)
-
-        x = screen_geometry.x() + 50
-        y = screen_geometry.y() + 50
-
-        running_game_servers_widget.move(x,y)
-
-        app.widgets.append(running_game_servers_widget)
-
-def add_node_widget():
-    for screen in screens:
-        screen_geometry = screen.availableGeometry()
-
-        node_widget = NodeDataWidget(node_manager)
-
-        node_widget.show()
-
-        if node_widget.windowHandle():
-            node_widget.windowHandle().setScreen(screen)
-
-        x = (
-            screen_geometry.right()
-            - node_widget.width()
-            - int(50)
-        )
-        y = screen_geometry.top() + int(50)
-
-        node_widget.move(x,y)
-
-        app.widgets.append(node_widget)
 
 
 

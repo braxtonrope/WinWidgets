@@ -9,6 +9,7 @@ class BaseWidget(QWidget):
     drag_started = Signal(object)
     dragging = Signal(object, object)
     drag_finished = Signal(object)
+    context_menu_requested = Signal(object)
 
 
     def __init__(self, title):
@@ -81,6 +82,12 @@ class BaseWidget(QWidget):
             self._drag_offset = mouse_position - widget_position
 
             self.drag_started.emit(self)
+
+            event.accept()
+            return
+
+        elif event.button() == Qt.MouseButton.RightButton:
+            self.context_menu_requested.emit(self)
 
             event.accept()
             return
