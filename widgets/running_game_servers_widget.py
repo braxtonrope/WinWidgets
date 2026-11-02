@@ -1,3 +1,4 @@
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QGridLayout
 
@@ -6,46 +7,56 @@ from widgets.base_widget import BaseWidget
 WIDTH = 300
 HEIGHT_PER_SERVER = 100
 
-class RunningGameServersWidget(BaseWidget):    
+
+class RunningGameServersWidget(BaseWidget):
 
     def __init__(self, amp_manager):
         super().__init__("Game Servers")
 
         self.amp_manager = amp_manager
+        self.is_active = False
 
-        # Get current data
-        server_data = amp_manager.get_data()
-       
         self.server_labels = []
 
-        # Listen for updates from the manager
-        self.amp_manager.data_updated.connect(self.refresh_server_data)
+        # Listen for updates from AMPDataManager
+        self.amp_manager.data_updated.connect(
+            self.refresh_server_data
+        )
 
-        # Check if data already exists
+        # Display cached data if available
         server_data = self.amp_manager.get_data()
+
         if server_data:
             self.create_server_widgets(server_data)
 
         self.style_widget()
         self.update_widget_size()
 
-        
+    def showEvent(self, event):
+        super().showEvent(event)
 
+        if not self.is_active:
+            self.is_active = True
+            self.amp_manager.activate()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+
+        if self.is_active:
+            self.is_active = False
+            self.amp_manager.deactivate()
 
     def refresh_server_data(self, updated_data):
 
-        # If there are no widgets yet, create them all
-        if not self.server_labels:
+        # If the number of servers has changed, rebuild the layout
+        if len(updated_data) != len(self.server_labels):
+            self.clear_server_widgets()
             self.create_server_widgets(updated_data)
             self.update_widget_size()
             return
 
         # Update existing widgets
         for i, server in enumerate(updated_data):
-
-            if i >= len(self.server_labels):
-                print("Missing widget for:", server["name"])
-                continue
 
             labels = self.server_labels[i]
 
@@ -56,11 +67,12 @@ class RunningGameServersWidget(BaseWidget):
                 f"Players: {server['player_count']}"
             )
 
-
     def create_server_widgets(self, server_data):
+
         for server in server_data:
+
             server_layout = QGridLayout()
-            server_layout.setContentsMargins(10,10,10,10)
+            server_layout.setContentsMargins(10, 10, 10, 10)
             server_layout.setSpacing(20)
 
             # Server name
@@ -72,12 +84,14 @@ class RunningGameServersWidget(BaseWidget):
                 font-weight: bold;
             """)
 
-            server_layout.addWidget(server_name, 0, 0)
+            server_layout.addWidget(server_name, 0, 0, 1, 3)
 
-            # Create labels with consistent widths
+            # Server metrics
             server_cpu = QLabel(f"CPU: {server['cpu_usage']}")
             server_ram = QLabel(f"RAM: {server['ram_usage']}")
-            server_players = QLabel(f"Players: {server['player_count']}")
+            server_players = QLabel(
+                f"Players: {server['player_count']}"
+            )
 
             for label in (server_cpu, server_ram, server_players):
                 label.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -97,9 +111,30 @@ class RunningGameServersWidget(BaseWidget):
                 "players": server_players
             })
 
-            # Add this server's complete layout to the widget
             self.content_layout.addLayout(server_layout)
 
+    def clear_server_widgets(self):
+
+        for labels in self.server_labels:
+
+            for label in labels.values():
+                label.deleteLater()
+
+        self.server_labels.clear()
+
+        # Remove old layouts from content_layout
+        while self.content_layout.count():
+
+            item = self.content_layout.takeAt(0)
+
+            if item.layout():
+                while item.layout().count():
+                    child = item.layout().takeAt(0)
+
+                    if child.widget():
+                        child.widget().deleteLater()
+
+                item.layout().deleteLater()
 
     def update_widget_size(self):
 
@@ -109,7 +144,5 @@ class RunningGameServersWidget(BaseWidget):
 
         self.resize(
             int(WIDTH),
-            int(
-                max(height, HEIGHT_PER_SERVER)
-            )
+            max(height, HEIGHT_PER_SERVER)
         )

@@ -1,98 +1,135 @@
-from PySide6.QtCore import QObject, QTimer, Signal
 
-from playwright.sync_api import sync_playwright
+import os
 
 from dotenv import load_dotenv, find_dotenv
-import os
-import math
+
+from PySide6.QtCore import QObject, QTimer, Signal, QThread
+
+from services.amp_scraper import AMPScraper
+
 
 load_dotenv(find_dotenv())
 
-AMP_SERVER = os.getenv("AMP_SERVER")
-AMP_USERNAME = os.getenv("AMP_USERNAME")
-AMP_PASSWORD = os.getenv("AMP_PASSWORD")
+
+class AMPScraperThread(QThread):
+
+    data_updated = Signal(list)
+    error_occurred = Signal(str)
+
+    def __init__(self, amp_server, username, password):
+        super().__init__()
+
+        self.amp_server = amp_server
+        self.username = username
+        self.password = password
+
+    def run(self):
+
+        try:
+            scraper = AMPScraper(
+                self.amp_server,
+                self.username,
+                self.password
+            )
+
+            data = scraper.scrape()
+
+            self.data_updated.emit(data)
+
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+
 
 class AMPDataManager(QObject):
+
     data_updated = Signal(list)
+    error_occurred = Signal(str)
 
     def __init__(self):
         super().__init__()
 
+        self.amp_server = os.getenv("AMP_SERVER")
+        self.username = os.getenv("AMP_USERNAME")
+        self.password = os.getenv("AMP_PASSWORD")
+
         self.server_data = []
 
+        # Widget activation tracking
+        self.active_widgets = 0
+
+        # Scraper thread
+        self.scraper_thread = None
+
+        # Refresh timer
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.refresh)
-        self.refresh_timer.start(30_000)
 
-        # Get initial data immediately.
-        self.refresh()
+    def activate(self):
+
+        self.active_widgets += 1
+
+        # Start scraping when the first widget activates
+        if self.active_widgets == 1:
+
+            self.refresh()
+
+            self.refresh_timer.start(30_000)
+
+    def deactivate(self):
+
+        self.active_widgets = max(0, self.active_widgets - 1)
+
+        # Stop refreshing when no widgets are active
+        if self.active_widgets == 0:
+            self.refresh_timer.stop()
 
     def refresh(self):
-        try:
-            self.server_data = self.get_running_game_servers_information()
 
-            # Notifiy widgets of updated data
-            self.data_updated.emit(self.server_data)
+        # Don't scrape if no widgets are active
+        if self.active_widgets == 0:
+            return
 
-        except Exception as e:
-            print(f"Failed to update AMP data: {e}")
+        # Prevent overlapping scraping threads
+        if self.scraper_thread is not None:
+            if self.scraper_thread.isRunning():
+                return
 
-    def get_running_game_servers_information(self):
-        server_data = []
+        self.scraper_thread = AMPScraperThread(
+            self.amp_server,
+            self.username,
+            self.password
+        )
 
-        with sync_playwright() as playwright:
-            browser = playwright.firefox.launch(headless=True)
+        self.scraper_thread.data_updated.connect(
+            self.update_server_data
+        )
 
-            page = browser.new_page()
+        self.scraper_thread.error_occurred.connect(
+            self.error_occurred.emit
+        )
 
-            page.goto(AMP_SERVER)
-            page.wait_for_load_state("networkidle") # Wait for AMP to load correctly
+        self.scraper_thread.finished.connect(
+            self.scraper_finished
+        )
 
-            # Login to AMP
-            page.locator('input[name="username"]').fill(os.getenv("AMP_USERNAME"))
-            page.locator('input[name="password"]').fill(os.getenv("AMP_PASSWORD"))
-            page.locator("#loginButton").click()
+        self.scraper_thread.start()
 
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(3000) # Makes sure the page is loaded before getting data
+    def update_server_data(self, data):
 
-            # Debug page contents
-            # print("RUNNING DIV COUNT:",
-            #     page.locator(".statusRunning").count())
+        # Ignore results if all widgets are inactive
+        if self.active_widgets == 0:
+            return
 
-            # print("SERVER ENTRY COUNT:",
-            #     page.locator(".ServerEntryTop").count())
+        self.server_data = data
+        self.data_updated.emit(data)
 
-            # print("FRIENDLY NAME COUNT:",
-            #     page.locator(
-            #         '[data-bind="text: friendlyname"]'
-            #     ).count())
+    def scraper_finished(self):
 
-            # Find running servers
-            running_divs = page.locator(".statusRunning")
-            friendly_name = running_divs.locator(".ServerEntryTop").locator(".ServerEntryHeader").locator('[data-bind="text: friendlyname"]')
+        thread = self.scraper_thread
+        self.scraper_thread = None
 
-            servers = friendly_name.all_text_contents()
-            servers = servers[:math.ceil(len(servers)/2)]
-
-            # Get CPU, MEMORY, and PLAYERS information
-            metrics = running_divs.locator(".ServerEntryInfo").locator(".ServerEntryMetrics").locator(".ServerEntryMetric").locator(".MetricText").locator("h4")
-            metrics_array = metrics.all_text_contents()
-            metrics_array = metrics_array[:len(metrics_array)//2]
-
-            next_index = 0
-            for i in range(len(servers)):
-                single_server_data = {
-                    "name": servers[i],
-                    "cpu_usage": metrics_array[0+next_index],
-                    "ram_usage": metrics_array[1+next_index],
-                    "player_count": metrics_array[2+next_index]
-                }
-                next_index += 3
-                server_data.append(single_server_data)
-
-            browser.close()
-            return server_data
+        if thread is not None:
+            thread.deleteLater()
 
     def get_data(self):
         return self.server_data

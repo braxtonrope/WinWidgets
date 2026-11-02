@@ -18,10 +18,6 @@ from services.node_data_manager import NodeDataManager
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
 
-app.widgets = []
-
-screens = QGuiApplication.screens()
-
 # ONE shared AMP data manager
 amp_manager = AMPDataManager()
 node_manager = NodeDataManager()

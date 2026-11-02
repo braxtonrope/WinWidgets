@@ -3,26 +3,17 @@
         {
             "id": "6095c561-2321-4ade-9c51-d8926deba484",
             "type": "node_data",
-            "x": 2235,
+            "x": 2185,
             "y": 25,
-            "width": 300,
-            "height": 338,
+            "width": 350,
+            "height": 416,
             "screen": "Q27G4_D"
-        },
-        {
-            "id": "4ebcb632-4a5f-47d0-a940-168c0210630b",
-            "type": "game_servers",
-            "x": 25,
-            "y": 25,
-            "width": 324,
-            "height": 113,
-            "screen": "27G2G3"
         },
         {
             "id": "602bd8cc-4335-4d99-9978-40cecfdd268d",
             "type": "time",
             "x": 710,
-            "y": -7,
+            "y": 0,
             "width": 500,
             "height": 145,
             "screen": "27G2G3"
@@ -30,10 +21,19 @@
         {
             "id": "16dca0e1-4e3c-42a3-8cd9-d9e3333b89b9",
             "type": "node_data",
-            "x": 1595,
+            "x": 1545,
             "y": 25,
-            "width": 300,
-            "height": 338,
+            "width": 350,
+            "height": 416,
+            "screen": "27G2G3"
+        },
+        {
+            "id": "e33df39a-13db-4772-b00b-8d26447a0703",
+            "type": "game_servers",
+            "x": 25,
+            "y": 25,
+            "width": 316,
+            "height": 113,
             "screen": "27G2G3"
         }
     ]
