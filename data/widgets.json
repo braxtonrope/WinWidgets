@@ -13,7 +13,7 @@
             "id": "602bd8cc-4335-4d99-9978-40cecfdd268d",
             "type": "time",
             "x": 710,
-            "y": 0,
+            "y": 25,
             "width": 500,
             "height": 145,
             "screen": "27G2G3"
@@ -35,6 +35,24 @@
             "width": 316,
             "height": 113,
             "screen": "27G2G3"
+        },
+        {
+            "id": "0b28ae0a-6ff8-44fb-b6ba-d45125bf5ff6",
+            "type": "game_servers",
+            "x": 25,
+            "y": 25,
+            "width": 316,
+            "height": 113,
+            "screen": "Q27G4_D"
+        },
+        {
+            "id": "b5fba4c2-7bc0-4eb8-a8fa-d0124bd9f4d3",
+            "type": "time",
+            "x": 1030,
+            "y": 25,
+            "width": 500,
+            "height": 145,
+            "screen": "Q27G4_D"
         }
     ]
 }
