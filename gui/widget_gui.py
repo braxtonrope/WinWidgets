@@ -46,13 +46,15 @@ class WidgetGUI(ctk.CTk):
         self.widget_options = {
             "Time and Date": "time",
             "AMP Manager": "game_servers",
-            "Node Data": "node_data"
+            "Node Data": "node_data",
+            "System Stats": "system_stats"
         }
 
         self.widget_names = {
             "time": "Time and Date",
             "game_servers": "AMP Manager",
-            "node_data": "Node Data"
+            "node_data": "Node Data",
+            "system_stats": "System Stats"
         }
 
         # Updater variables
