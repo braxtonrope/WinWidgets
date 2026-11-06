@@ -1,6 +1,7 @@
 import ctypes
 import subprocess
 import time
+import sys, os
 
 from pathlib import Path
 from ctypes import wintypes
@@ -69,6 +70,8 @@ class CoreTempManager:
         self.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 
     def start(self):
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            self.request_admin()
 
         if not self.core_temp_path.is_file():
             raise FileNotFoundError(self.core_temp_path)
@@ -107,7 +110,6 @@ class CoreTempManager:
         )
 
         if not handle:
-            print("Could not open Core Temp memory. Need admin access.")
             return "N/A"
             # raise RuntimeError("Could not open Core Temp shared memory")
 
@@ -173,6 +175,19 @@ class CoreTempManager:
             self.process = None
             self.started_by_us = False
 
+    def request_admin(self):
+        script = os.path.abspath(sys.argv[0])
+        params = subprocess.list2cmdline([script] + sys.argv[1:])
+
+        hinstance = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            sys.executable,
+            params,
+            None,
+            0 # Hides the terminal window
+        )
+
 class HardwareManager(QObject):
 
     data_updated = Signal(object)
@@ -181,17 +196,17 @@ class HardwareManager(QObject):
         super().__init__()
 
         self.core_temp_manager = CoreTempManager(core_temp_path=r"C:\Program Files\Core Temp\Core Temp.exe")
-        
+
         try:
             self.core_temp_manager.start()
         except Exception as e:
-            print("Requires elevation.")
+            print("Admin required...")
 
         self.data = {}
 
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.refresh_data)
-        self.refresh_timer.start(1_000)
+        self.refresh_timer.start(3_000)
 
         # Initial collection
         self.refresh_data()
@@ -221,5 +236,6 @@ class HardwareManager(QObject):
 
     def stop(self):
         self.core_temp_manager.stop()
+
 
     

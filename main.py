@@ -3,76 +3,100 @@ os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
 os.environ["QT_SCALE_FACTOR"] = "1"
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QGuiApplication
 
 from manager.widget_manager import WidgetManager
-
 from widgets.time_widget import TimeWidget
-from widgets.running_game_servers_widget import RunningGameServersWidget
-from widgets.node_data_widget import NodeDataWidget
-from services.amp_data_manager import AMPDataManager
-from services.node_data_manager import NodeDataManager
-from widgets.system_stats_widget import SystemStatsWidget
-from services.hardware_manager import HardwareManager
-
-
 
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
 
 
-
 def main():
-
-    amp_manager = AMPDataManager()
-    node_manager = NodeDataManager()
-    hardware_manager = HardwareManager()
 
     widget_manager = WidgetManager(
         padding=25,
         snap_distance=50
     )
 
-    # Register widget types
+    # Shared managers - initially None
+    amp_manager = None
+    node_manager = None
+    hardware_manager = None
+
+    def get_amp_manager():
+        nonlocal amp_manager
+
+        if amp_manager is None:
+            from services.amp_data_manager import AMPDataManager
+            amp_manager = AMPDataManager()
+
+        return amp_manager
+
+    def get_node_manager():
+        nonlocal node_manager
+
+        if node_manager is None:
+            from services.node_data_manager import NodeDataManager
+            node_manager = NodeDataManager()
+
+        return node_manager
+
+    def get_hardware_manager():
+        nonlocal hardware_manager
+
+        if hardware_manager is None:
+            from services.hardware_manager import HardwareManager
+            hardware_manager = HardwareManager()
+
+        return hardware_manager
+
+    # Register all widget types
     widget_manager.register_widget(
         "time",
         lambda: TimeWidget()
     )
 
     widget_manager.register_widget(
-        "node_data",
-        lambda: NodeDataWidget(node_manager)
+        "game_servers",
+        lambda: create_game_servers()
     )
 
     widget_manager.register_widget(
-        "game_servers",
-        lambda: RunningGameServersWidget(amp_manager)
+        "node_data",
+        lambda: create_node_data()
     )
 
     widget_manager.register_widget(
         "system_stats",
-        lambda: SystemStatsWidget(hardware_manager)
+        lambda: create_system_stats()
     )
+
+    # Widget factories
+    def create_game_servers():
+        from widgets.running_game_servers_widget import RunningGameServersWidget
+        return RunningGameServersWidget(get_amp_manager())
+
+    def create_node_data():
+        from widgets.node_data_widget import NodeDataWidget
+        return NodeDataWidget(get_node_manager())
+
+    def create_system_stats():
+        from widgets.system_stats_widget import SystemStatsWidget
+        return SystemStatsWidget(get_hardware_manager())
 
     # Load saved layout
     loaded = widget_manager.load_layout()
 
-    # Create defaults if no saved layout exists
     if not loaded:
-
         time_widget = widget_manager.add_widget(
             "time",
             save=False
         )
 
-        # Set initial positions
         time_widget.move(50, 50)
-
-        # Save the initial layout
         widget_manager.save_layout()
 
     sys.exit(app.exec())
-
 
 
 if __name__ == "__main__":
